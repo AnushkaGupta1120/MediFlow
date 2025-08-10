@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 
-const categories = ['Medicines', 'Personal Protective', 'Respiratory', 'Equipment', 'Vascular Access', 'Surgical'];
-
-const suppliers = ['HealthPlus Supplies', 'MediEquip Co.', 'CareSource Distributors'];
+const categories = [
+  'Medicines', 'Personal Protective', 'Respiratory', 
+  'Equipment', 'Vascular Access', 'Surgical'
+];
+const suppliers = [
+  'HealthPlus Supplies', 'MediEquip Co.', 'CareSource Distributors'
+];
 
 export default function AddInventory() {
   const [formData, setFormData] = useState({
@@ -16,11 +20,10 @@ export default function AddInventory() {
   });
 
   const [errors, setErrors] = useState({});
+  const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    // For quantity, reorderLevel, price convert to numbers if possible
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -32,142 +35,127 @@ export default function AddInventory() {
     if (!formData.productName.trim()) newErrors.productName = 'Product Name is required';
     if (!formData.sku.trim()) newErrors.sku = 'SKU is required';
     if (!formData.category) newErrors.category = 'Category is required';
-    if (!formData.quantity || isNaN(formData.quantity) || formData.quantity < 0) newErrors.quantity = 'Valid quantity is required';
-    if (!formData.reorderLevel || isNaN(formData.reorderLevel) || formData.reorderLevel < 0) newErrors.reorderLevel = 'Valid reorder level is required';
-    if (!formData.price || isNaN(formData.price) || formData.price < 0) newErrors.price = 'Valid price is required';
+    if (!formData.quantity || isNaN(formData.quantity) || formData.quantity < 0) newErrors.quantity = 'Enter a valid quantity';
+    if (!formData.reorderLevel || isNaN(formData.reorderLevel) || formData.reorderLevel < 0) newErrors.reorderLevel = 'Enter a valid reorder level';
+    if (!formData.price || isNaN(formData.price) || formData.price < 0) newErrors.price = 'Enter a valid price';
     if (!formData.supplier) newErrors.supplier = 'Supplier is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
     if (!validate()) return;
 
-    // For now just log the data (later replace with API or state update)
-    console.log('Inventory item added:', formData);
+    try {
+      const res = await fetch('http://localhost:5000/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
 
-    // Clear form
-    setFormData({
-      productName: '',
-      sku: '',
-      category: '',
-      quantity: '',
-      reorderLevel: '',
-      price: '',
-      supplier: '',
-    });
-
-    alert('Inventory item added successfully!');
+      if (res.ok) {
+        setMessage('✅ Inventory item added successfully!');
+        setFormData({
+          productName: '',
+          sku: '',
+          category: '',
+          quantity: '',
+          reorderLevel: '',
+          price: '',
+          supplier: '',
+        });
+        setErrors({});
+      } else {
+        setMessage(data.message || '❌ Something went wrong.');
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage('❌ Error: Unable to connect to server.');
+    }
   };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow-md">
       <h1 className="text-3xl font-bold mb-6 text-[#204671]">Add Inventory</h1>
+      
+      {message && (
+        <div className={`mb-4 p-3 rounded ${message.startsWith('✅') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          {message}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="productName">Product Name</label>
-          <input
-            type="text"
-            name="productName"
-            id="productName"
-            value={formData.productName}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.productName ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {errors.productName && <p className="text-red-500 text-sm mt-1">{errors.productName}</p>}
-        </div>
+        {/* Product Name */}
+        <InputField
+          label="Product Name"
+          name="productName"
+          value={formData.productName}
+          error={errors.productName}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="sku">SKU</label>
-          <input
-            type="text"
-            name="sku"
-            id="sku"
-            value={formData.sku}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.sku ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {errors.sku && <p className="text-red-500 text-sm mt-1">{errors.sku}</p>}
-        </div>
+        {/* SKU */}
+        <InputField
+          label="SKU"
+          name="sku"
+          value={formData.sku}
+          error={errors.sku}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="category">Category</label>
-          <select
-            name="category"
-            id="category"
-            value={formData.category}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.category ? 'border-red-500' : 'border-gray-300'}`}
-          >
-            <option value="">Select category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
-        </div>
+        {/* Category */}
+        <SelectField
+          label="Category"
+          name="category"
+          value={formData.category}
+          error={errors.category}
+          options={categories}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="quantity">Quantity</label>
-          <input
-            type="number"
-            name="quantity"
-            id="quantity"
-            min="0"
-            value={formData.quantity}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.quantity ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {errors.quantity && <p className="text-red-500 text-sm mt-1">{errors.quantity}</p>}
-        </div>
+        {/* Quantity */}
+        <InputField
+          label="Quantity"
+          name="quantity"
+          type="number"
+          value={formData.quantity}
+          error={errors.quantity}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="reorderLevel">Reorder Level</label>
-          <input
-            type="number"
-            name="reorderLevel"
-            id="reorderLevel"
-            min="0"
-            value={formData.reorderLevel}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.reorderLevel ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {errors.reorderLevel && <p className="text-red-500 text-sm mt-1">{errors.reorderLevel}</p>}
-        </div>
+        {/* Reorder Level */}
+        <InputField
+          label="Reorder Level"
+          name="reorderLevel"
+          type="number"
+          value={formData.reorderLevel}
+          error={errors.reorderLevel}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="price">Price ($)</label>
-          <input
-            type="number"
-            name="price"
-            id="price"
-            min="0"
-            step="0.01"
-            value={formData.price}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.price ? 'border-red-500' : 'border-gray-300'}`}
-          />
-          {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
-        </div>
+        {/* Price */}
+        <InputField
+          label="Price"
+          name="price"
+          type="number"
+          step="0.01"
+          value={formData.price}
+          error={errors.price}
+          onChange={handleChange}
+        />
 
-        <div>
-          <label className="block font-semibold mb-1" htmlFor="supplier">Supplier</label>
-          <select
-            name="supplier"
-            id="supplier"
-            value={formData.supplier}
-            onChange={handleChange}
-            className={`w-full border px-3 py-2 rounded ${errors.supplier ? 'border-red-500' : 'border-gray-300'}`}
-          >
-            <option value="">Select supplier</option>
-            {suppliers.map((sup) => (
-              <option key={sup} value={sup}>{sup}</option>
-            ))}
-          </select>
-          {errors.supplier && <p className="text-red-500 text-sm mt-1">{errors.supplier}</p>}
-        </div>
+        {/* Supplier */}
+        <SelectField
+          label="Supplier"
+          name="supplier"
+          value={formData.supplier}
+          error={errors.supplier}
+          options={suppliers}
+          onChange={handleChange}
+        />
 
         <button
           type="submit"
@@ -179,3 +167,40 @@ export default function AddInventory() {
     </div>
   );
 }
+
+// Reusable Input Field Component
+const InputField = ({ label, name, value, onChange, error, type = 'text', step }) => (
+  <div>
+    <label className="block font-semibold mb-1" htmlFor={name}>{label}</label>
+    <input
+      type={type}
+      name={name}
+      id={name}
+      step={step}
+      value={value}
+      onChange={onChange}
+      className={`w-full border px-3 py-2 rounded ${error ? 'border-red-500' : 'border-gray-300'}`}
+    />
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
+
+// Reusable Select Field Component
+const SelectField = ({ label, name, value, onChange, error, options }) => (
+  <div>
+    <label className="block font-semibold mb-1" htmlFor={name}>{label}</label>
+    <select
+      name={name}
+      id={name}
+      value={value}
+      onChange={onChange}
+      className={`w-full border px-3 py-2 rounded ${error ? 'border-red-500' : 'border-gray-300'}`}
+    >
+      <option value="">Select {label.toLowerCase()}</option>
+      {options.map(opt => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
