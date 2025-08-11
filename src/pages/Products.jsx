@@ -35,7 +35,7 @@ export default function Products() {
             <td className="border px-4 py-2">Protective Gear</td>
             <td className="border px-4 py-2">500</td>
             <td className="border px-4 py-2">200</td>
-            <td className="border px-4 py-2">₹171</td>
+            <td className="border px-4 py-2">₹171~</td>
             <td className="border px-4 py-2">Supplier B</td>
           </tr>
           {/* Add more rows as needed */}

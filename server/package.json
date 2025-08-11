@@ -3,8 +3,16 @@
   "name": "mediflow-backend",
   "version": "1.0.0",
   "dependencies": {
-    "express": "^5.1.0",
     "cors": "^2.8.5",
-    "mysql2": "^3.14.1"
+    "express": "^5.1.0",
+    "mysql2": "^3.14.1",
+    "open": "^10.2.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }
